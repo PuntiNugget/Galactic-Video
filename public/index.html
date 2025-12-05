@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEON STREAM // UPLINK</title>
-    <!-- Google Fonts for that Sci-Fi look -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         /* --- FUTURISTIC CSS --- */
@@ -13,6 +13,7 @@
             --grid-color: #1a1a1a;
             --primary-neon: #00f3ff; /* Cyan */
             --secondary-neon: #ff00ff; /* Magenta */
+            --danger-color: #ff3333; /* Red for delete */
             --glass-bg: rgba(0, 243, 255, 0.05);
             --border-glow: 0 0 10px rgba(0, 243, 255, 0.5);
         }
@@ -30,7 +31,7 @@
             overflow-x: hidden;
         }
 
-        /* Scanline Overlay Effect */
+        /* Scanline Overlay */
         body::before {
             content: "";
             position: fixed;
@@ -48,7 +49,6 @@
             z-index: 1;
         }
 
-        /* Header Styles */
         header {
             text-align: center;
             margin-bottom: 50px;
@@ -73,7 +73,6 @@
             opacity: 0.8;
         }
 
-        /* Upload Box Styles */
         .upload-box {
             background: var(--glass-bg);
             border: 1px solid var(--primary-neon);
@@ -146,7 +145,7 @@
             transform: translateY(-5px);
         }
 
-        /* Decorative corners for video cards */
+        /* Decorative corners */
         .video-card::after {
             content: '';
             position: absolute;
@@ -165,15 +164,36 @@
         .card-info {
             padding: 10px;
             background: linear-gradient(to right, #000, #111);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .video-title {
             font-size: 0.8rem;
             color: #aaa;
             margin: 0;
+            word-break: break-all;
+        }
+
+        /* Delete Button Style */
+        .delete-btn {
+            background: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 5px;
+            font-size: 0.8rem;
+            width: 100%;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .delete-btn:hover {
+            background: var(--danger-color);
+            color: white;
+            box-shadow: 0 0 10px var(--danger-color);
         }
         
-        /* Glitch Animation Keyframes */
         @keyframes glitch {
             0% { transform: translate(0) }
             20% { transform: translate(-2px, 2px) }
@@ -189,13 +209,12 @@
     <div class="container">
         <header>
             <h1>NEON STREAM</h1>
-            <div class="subtitle">SECURE VIDEO UPLINK NODE v2.0</div>
+            <div class="subtitle">SECURE VIDEO UPLINK NODE v2.1</div>
             
             <div class="upload-box">
                 <input type="file" id="videoInput" accept="video/mp4">
                 <button onclick="uploadVideo()" id="uploadBtn">INITIATE UPLOAD</button>
             </div>
-            <!-- This div simulates a typing terminal -->
             <div class="status-terminal" id="statusMsg">SYSTEM READY... WAITING FOR DATA.</div>
         </header>
 
@@ -214,12 +233,11 @@
         const uploadBtn = document.getElementById('uploadBtn');
         const videoInput = document.getElementById('videoInput');
 
-        // Typewriter effect function
         function typeStatus(text, color = 'var(--secondary-neon)') {
             statusMsg.style.color = color;
             statusMsg.innerText = '';
             let i = 0;
-            const speed = 30; // ms per character
+            const speed = 30; 
 
             function typeWriter() {
                 if (i < text.length) {
@@ -247,7 +265,7 @@
                 videos.forEach((filename, index) => {
                     const card = document.createElement('div');
                     card.className = 'video-card';
-                    card.style.animation = `glitch 0.5s ease ${index * 0.1}s`; // Staggered entrance
+                    card.style.animation = `glitch 0.5s ease ${index * 0.1}s`; 
                     
                     card.innerHTML = `
                         <video controls preload="metadata">
@@ -255,6 +273,7 @@
                         </video>
                         <div class="card-info">
                             <p class="video-title">FILE: ${filename}</p>
+                            <button class="delete-btn" onclick="deleteVideo('${filename}')">[PURGE FILE]</button>
                         </div>
                     `;
                     videoGrid.appendChild(card);
@@ -276,16 +295,12 @@
             const formData = new FormData();
             formData.append('videoFile', file);
 
-            // UI Updates
             uploadBtn.disabled = true;
             uploadBtn.innerText = 'TRANSMITTING...';
             typeStatus('>> ESTABLISHING UPLINK... UPLOADING DATA...', '#fff');
 
             try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/upload', { method: 'POST', body: formData });
                 const result = await response.json();
 
                 if (response.ok) {
@@ -301,6 +316,28 @@
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.innerText = 'INITIATE UPLOAD';
+            }
+        }
+
+        // 3. Handle Deletion
+        async function deleteVideo(filename) {
+            if(!confirm(`WARNING: THIS WILL PERMANENTLY ERASE [${filename}]. PROCEED?`)) return;
+
+            typeStatus('>> INITIATING PURGE SEQUENCE...', 'var(--danger-color)');
+
+            try {
+                const response = await fetch(`/delete/${filename}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    typeStatus('>> FILE DELETED SUCCESSFULLY.', 'var(--danger-color)');
+                    loadVideos();
+                } else {
+                    typeStatus('>> DELETE FAILED: ' + result.message, 'red');
+                }
+            } catch (err) {
+                console.error(err);
+                typeStatus('>> ERROR: DELETION FAILED.', 'red');
             }
         }
 
