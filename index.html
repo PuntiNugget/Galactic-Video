@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON STREAM // UPLINK</title>
+    <!-- Google Fonts for that Sci-Fi look -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* --- FUTURISTIC CSS --- */
+        :root {
+            --bg-color: #050505;
+            --grid-color: #1a1a1a;
+            --primary-neon: #00f3ff; /* Cyan */
+            --secondary-neon: #ff00ff; /* Magenta */
+            --glass-bg: rgba(0, 243, 255, 0.05);
+            --border-glow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: var(--primary-neon);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Scanline Overlay Effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            border-bottom: 2px solid var(--primary-neon);
+            padding-bottom: 20px;
+            box-shadow: var(--border-glow);
+            background: rgba(0,0,0,0.8);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            margin: 0;
+            text-shadow: 0 0 20px var(--primary-neon);
+            letter-spacing: 5px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--secondary-neon);
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        /* Upload Box Styles */
+        .upload-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--primary-neon);
+            padding: 20px;
+            display: inline-flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        input[type="file"] {
+            color: white;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        button {
+            background: transparent;
+            color: var(--primary-neon);
+            border: 1px solid var(--primary-neon);
+            padding: 10px 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--primary-neon);
+            color: black;
+            box-shadow: 0 0 20px var(--primary-neon);
+        }
+
+        button:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-terminal {
+            margin-top: 15px;
+            font-size: 1rem;
+            min-height: 1.2em;
+            color: var(--secondary-neon);
+            text-shadow: 0 0 5px var(--secondary-neon);
+        }
+
+        /* Grid Styles */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .video-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #333;
+            padding: 5px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .video-card:hover {
+            border-color: var(--secondary-neon);
+            box-shadow: 0 0 15px var(--secondary-neon);
+            transform: translateY(-5px);
+        }
+
+        /* Decorative corners for video cards */
+        .video-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 10px; height: 10px;
+            border-bottom: 2px solid var(--secondary-neon);
+            border-right: 2px solid var(--secondary-neon);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            border-bottom: 1px solid #333;
+        }
+
+        .card-info {
+            padding: 10px;
+            background: linear-gradient(to right, #000, #111);
+        }
+
+        .video-title {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin: 0;
+        }
+        
+        /* Glitch Animation Keyframes */
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>NEON STREAM</h1>
+            <div class="subtitle">SECURE VIDEO UPLINK NODE v2.0</div>
+            
+            <div class="upload-box">
+                <input type="file" id="videoInput" accept="video/mp4">
+                <button onclick="uploadVideo()" id="uploadBtn">INITIATE UPLOAD</button>
+            </div>
+            <!-- This div simulates a typing terminal -->
+            <div class="status-terminal" id="statusMsg">SYSTEM READY... WAITING FOR DATA.</div>
+        </header>
+
+        <main>
+            <div id="videoGrid" class="grid">
+                <!-- Videos inject here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- FUTURISTIC JS LOGIC ---
+
+        const videoGrid = document.getElementById('videoGrid');
+        const statusMsg = document.getElementById('statusMsg');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const videoInput = document.getElementById('videoInput');
+
+        // Typewriter effect function
+        function typeStatus(text, color = 'var(--secondary-neon)') {
+            statusMsg.style.color = color;
+            statusMsg.innerText = '';
+            let i = 0;
+            const speed = 30; // ms per character
+
+            function typeWriter() {
+                if (i < text.length) {
+                    statusMsg.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, speed);
+                }
+            }
+            typeWriter();
+        }
+
+        // 1. Fetch and render videos
+        async function loadVideos() {
+            try {
+                const response = await fetch('/videos');
+                const videos = await response.json();
+
+                videoGrid.innerHTML = ''; 
+
+                if (videos.length === 0) {
+                    videoGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; opacity: 0.5;">[NO DATA FOUND IN ARCHIVES]</p>';
+                    return;
+                }
+
+                videos.forEach((filename, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.style.animation = `glitch 0.5s ease ${index * 0.1}s`; // Staggered entrance
+                    
+                    card.innerHTML = `
+                        <video controls preload="metadata">
+                            <source src="/uploads/${filename}" type="video/mp4">
+                        </video>
+                        <div class="card-info">
+                            <p class="video-title">FILE: ${filename}</p>
+                        </div>
+                    `;
+                    videoGrid.appendChild(card);
+                });
+            } catch (error) {
+                typeStatus('ERROR: CONNECTION TO MAINFRAME FAILED', 'red');
+            }
+        }
+
+        // 2. Handle Upload
+        async function uploadVideo() {
+            const file = videoInput.files[0];
+
+            if (!file) {
+                typeStatus('>> ERROR: SELECT TARGET FILE FIRST', 'orange');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('videoFile', file);
+
+            // UI Updates
+            uploadBtn.disabled = true;
+            uploadBtn.innerText = 'TRANSMITTING...';
+            typeStatus('>> ESTABLISHING UPLINK... UPLOADING DATA...', '#fff');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    typeStatus('>> UPLOAD SEQUENCE COMPLETE. ARCHIVE UPDATED.', 'var(--primary-neon)');
+                    videoInput.value = ''; 
+                    loadVideos(); 
+                } else {
+                    typeStatus('>> ERROR: ' + (result.message || 'TRANSMISSION FAILED'), 'red');
+                }
+            } catch (error) {
+                console.error(error);
+                typeStatus('>> CRITICAL ERROR: SERVER UNREACHABLE', 'red');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerText = 'INITIATE UPLOAD';
+            }
+        }
+
+        // Initial Load
+        loadVideos();
+    </script>
+</body>
+</html>
