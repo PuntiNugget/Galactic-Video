@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURATION ---
 
@@ -17,10 +17,10 @@ if (!fs.existsSync(uploadDir)) {
 // 2. Configure Multer (File Upload System)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDir); // Save to public/uploads
+        cb(null, uploadDir); 
     },
     filename: (req, file, cb) => {
-        // Name file: timestamp-originalName.mp4 (prevents duplicates)
+        // Name file: timestamp-originalName.mp4
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
@@ -28,7 +28,6 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-        // Only allow MP4 files
         if (file.mimetype === 'video/mp4') {
             cb(null, true);
         } else {
@@ -39,33 +38,68 @@ const upload = multer({
 
 // --- MIDDLEWARE ---
 
-// Serve static files from the 'public' directory
 app.use(express.static('public'));
+// Also serve uploads if they ended up in a root uploads folder by mistake
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // --- ROUTES ---
+
+// Homepage
+app.get('/', (req, res) => {
+    const publicIndex = path.join(__dirname, 'public', 'index.html');
+    const rootIndex = path.join(__dirname, 'index.html');
+
+    if (fs.existsSync(publicIndex)) {
+        res.sendFile(publicIndex);
+    } else if (fs.existsSync(rootIndex)) {
+        res.sendFile(rootIndex);
+    } else {
+        res.send('SYSTEM ERROR: index.html not found.');
+    }
+});
 
 // 1. Upload Route
 app.post('/upload', upload.single('videoFile'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded or invalid format.' });
+        return res.status(400).json({ success: false, message: 'ERROR: No file detected or invalid format.' });
     }
-    res.json({ success: true, message: 'File uploaded successfully!' });
+    res.json({ success: true, message: 'UPLOAD SEQUENCE COMPLETE.' });
 });
 
 // 2. List Videos Route
 app.get('/videos', (req, res) => {
-    fs.readdir(uploadDir, (err, files) => {
-        if (err) {
-            return res.status(500).json([]);
-        }
-        // Filter for .mp4 files and reverse so newest show first
-        const videos = files.filter(file => file.endsWith('.mp4')).reverse();
-        res.json(videos);
-    });
+    if (fs.existsSync(uploadDir)) {
+        fs.readdir(uploadDir, (err, files) => {
+            if (err) return res.json([]);
+            const videos = files.filter(file => file.endsWith('.mp4')).reverse();
+            res.json(videos);
+        });
+    } else {
+        res.json([]);
+    }
+});
+
+// 3. DELETE Video Route (NEW)
+app.delete('/delete/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // Security: path.basename ensures someone can't type "../../file" to hack the system
+    const safeFilename = path.basename(filename);
+    const filepath = path.join(uploadDir, safeFilename);
+
+    if (fs.existsSync(filepath)) {
+        fs.unlink(filepath, (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ success: false, message: 'ERROR: DELETION FAILED' });
+            }
+            res.json({ success: true, message: 'FILE DELETED.' });
+        });
+    } else {
+        res.status(404).json({ success: false, message: 'ERROR: FILE NOT FOUND' });
+    }
 });
 
 // --- START SERVER ---
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`Videos are stored in: ${uploadDir}`);
+    console.log(`>> SYSTEM ONLINE. PORT: ${PORT}`);
 });
